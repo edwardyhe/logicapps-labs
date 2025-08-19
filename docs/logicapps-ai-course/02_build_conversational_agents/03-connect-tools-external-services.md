@@ -42,68 +42,79 @@ In conversational agent scenarios, connectors turn operations that work with ext
 
 > [!NOTE]
 >
-> Conversational agent workflows don't support connector triggers. Conversational agents start when a 
-> chat session starts, from the chat client integrated with Azure Logic Apps. No separate workflow
-> trigger exists in the agent because the agent directly calls tool actions during the conversation.
+> Conversational agent workflows must always start with the default **A2A Trigger**, and not any other trigger. 
+> Conversational agents start running when a chat session starts from the integrated chat client in Azure Logic Apps.
+> No separate workflow trigger exists in the agent because the agent directly calls tool actions during the conversation.
 
 The following table helps map the relationship between connector operations and the tools that conversational agents use:
 
 | Component | Description |
-| --- | --- |
-| Connectors | - Provide operations that you use to create reusable integrations where Azure Logic Apps can call external services, such as Microsoft 365, GitHub, Azure services, SaaS apps, and more. <br><br>- Expose connector operations as triggers (event-based starts) and actions (steps you can call). <br><br>- Use a connection that holds authentication and environment-specific settings. <br><br>- Managed connectors vs. built-in actions: managed connectors often require connections; built-in actions (HTTP, Compose, Variables) do not. |
-| Tools | - A single action or action sequence that agent can invoke to satisfy a user's request (for example, "get weather," "look up a ticket").
-	- In Azure Logic Apps agents, a tool can be backed by a connector action, a built-in action, or another workflow.
-	- You provide the tool’s name and description so the agent knows when to call it. Good descriptions drive better tool selection.
+|-----------|-------------|
+| Connectors | - Provide operations that you use to create reusable integrations where Azure Logic Apps can call external services, such as Microsoft 365, GitHub, Azure services, SaaS apps, and more. <br><br>- Expose connector operations as triggers, which are events that start the workflow, and actions, which are tasks that the agent can call. <br><br>- Create a connection that specifies authentication and environment-specific settings. <br><br>- Managed connectors versus built-in operations: Managed connector operations run in global, multitenant Azure and usually require connections. Built-in operations, such as Request, Recurrence, HTTP, Compose, Until, and so on, directly run with the Azure Logic Apps runtime. |
+| Tools | - Provides a single action or an action sequence that an agent can call to satisfy a user's request, such as "Get weather" or "Look up a ticket". <br><br>- For agents in Azure Logic Apps, a tool can use a connector action, a built-in action, or even another workflow. <br><br>- Provide a tool name and description so that the agent can better determine when to call the tool. Good descriptions drive better tool selection. |
 
 ## Prerequisites
 
-- An Azure subscription with permissions to create logic apps and connections.
+- An Azure account and subscription. If you don't have a subscription, [sign up for a free Azure account](https://azure.microsoft.com/free/?WT.mc_id=A261C142F).
+
 - A conversational logic app agent set up in the previous module(s) with model/provider configured.
-- For the exercises:
-	- Primary example: RSS connector (no authentication required).
-	- Optional alternative: MSN Weather connector (no authentication required).
-	- Optional authenticated example: a GitHub account and either OAuth 2.0 or a personal access token (PAT) with minimal read scopes.
+
+- A Standard logic app resource and conversational agent workflow with the model set up from previous modules.
+
+  For the examples, this workflow include
+
+  - Primary example: RSS connector, which doesn't need authentication.
+  - Optional alternative: MSN Weather connector, which doesn't need authentication.
+  - Optional example with authentication: A GitHub account with either OAuth 2.0 or a personal access token (PAT) with minimal read scopes.
 
 > [!NOTE]
-> This module focuses on connector-backed tools. Agent parameters and OBO patterns come later.
+>
+> This module focuses on connector-backed tools. Later modules cover agent parameters and on-behalf-of (OB) authorization patterns.
 
----
+## Connector concepts for this module
 
-## Connector concepts you will use
+| Concept | Description |
+|---------|-------------|
+| Triggers versus actions | Conversational agent workflows must use the default **A2A Trigger**. Autonomous agent workflows can use any available trigger. Agents in both workflows use actions as tools. |
+| Connections and authentication | OAuth 2.0, API key, managed identity, or none, based on the connector. |
+| Inputs and outputs | Actions define parameters and return JSON. The agent summarizes outputs for the end user. |
+| Limits and reliability | Expect throttling errors (HTTP 429), timeouts, retries, and pagination. Design your prompts and tools to gracefully handle errors and exceptions. |
+| Connection references | Your workflow binds to a specific connection at runtime. |
 
-- Actions vs. triggers: in conversational agents, connector triggers are not supported. Use actions as tools. Connector triggers are supported for autonomous agents.
-- Connections and authentication: OAuth 2.0, API key, managed identity, or none depending on the connector.
-- Inputs and outputs: actions define parameters and return JSON; your agent summarizes outputs for the user.
-- Limits and reliability: expect throttling (HTTP 429), timeouts, retries, and pagination; design prompts and tools to handle gracefully.
-- Connection references: your workflow binds to a specific connection at runtime.
+## Part 1 - Expose a basic read-only RSS connector as a tool (primary example)
 
----
+To more easily demonstrate the conversational agent pattern from end to end, this example doesn't use authentication or agent parameters.
 
-## Part 1 (primary): Expose a simple read-only connector as a tool (RSS)
+### Step 1 - Add a tool for your agent
 
-We will start with a no-auth example to see the pattern end to end without parameters.
+1. In the [Azure portal](https://portal.azure.com), open your Standard logic app resource.
 
-### Step 1 — Open your agent
-- Open your logic app (Standard) and navigate to your conversational agent workflow (Agent Loop).
+1. Open the conversational agent workflow in the designer.
 
-### Step 2 — Add a tool from a connector action
-- Add a new Tool.
-- Choose to create from a Connector action and search for "RSS".
-- Select "RSS — List items in feed". This adds the action to the tool.
-- Name and describe the tool clearly, for example:
-	- Tool name: GetLatestRss
-	- Description: "Retrieves the latest posts from a specific RSS feed and returns titles and links for summarization."
+1. On the designer, inside the agent and under **Add tool**, select the plus sign (+) to open the pane where you can browse available actions.
 
-> [!TIP]
-> The LLM uses the tool description to decide when to call the tool. Keep it short, specific, and outcome-focused.
+1. On the **Add an action** pane, follow these [general steps](https://learn.microsoft.com/azure/logic-apps/create-workflow-with-trigger-or-action?tabs=standard#add-action) to add the **RSS** action named **List items in feed** to the empty tool.
 
-### Step 3 — Configure the connector action
-- Feed URL: set a fixed URL (no parameters yet), for example:
-	- https://techcommunity.microsoft.com/gxcuf89792/rss/board?board.id=AzureLogicApps
-- Number of items: 5–10 (keeps responses concise).
-- Save.
+1. Provide a clear and brief name and desription for the tool, for example:
 
-### Step 4 — Map outputs for the agent
+   - Name: **Get latest RSS**
+   - Description: **Retrieves latest posts from a specific RSS feed and returns the titles and links for a summary.**
+
+     The large language model (LLM) uses the tool description to help the agent decide when to call the tool. Keep the description short, specific, and outcome-focused.
+
+### Step 2 - Set up the connector action
+
+1. In the **RSS** action that you added, provide the following information:
+
+   | Parameters | Description |
+   |------------|-------------|
+   | **Feed URL** | A fixed URL without any parameters, for example: **https://techcommunity.microsoft.com/gxcuf89792/rss/board?board.id=AzureLogicApps** |
+   | **Number of items** | Specify 5-10 times to keep the agent responses concise. |
+
+1. Save your workflow.
+
+### Step 3 — Map outputs for the agent
+
 - Keep outputs compact. The RSS action returns items with title, primaryLink, publishDate, etc.
 - If your designer supports selecting outputs, include only fields you need (title, link).
 - Save the workflow.
