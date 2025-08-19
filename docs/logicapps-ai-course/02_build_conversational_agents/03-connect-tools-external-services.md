@@ -1,65 +1,59 @@
 ---
-title: Connect tools to external services (Module 03)
-description: Learn how to connect a conversational Azure Logic Apps agent to external services using connectors and expose connector actions as tools.
-ms.service: logic-apps
-ms.topic: tutorial
-ms.date: 08/13/2025
+title: Connect tools to external services - Module 03
+description: Learn how to connect a conversational agent workflow in Azure Logic Apps to external services by using connectors and how to expose connector actions as tools for agents.
+ms.service: azure-logic-apps
 author: edwardyhe
 ms.author: edwardyhe
+ms.topic: tutorial
+ms.date: 08/13/2025
+#Customer intent: As an integration solution sevelo
 ---
 
-# Connect your tools with external services (Module 03)
+# Connect your tools to external services (Module 03)
 
-In this module, you will learn how to connect your conversational Azure Logic Apps agent to external systems using connectors, and how to expose connector operations to the agent as tools it can call during a conversation.
+In this module, you learn how to connect a conversational agent workflow in Azure Logic Apps to external systems by using connectors and how to expose connector actions as tools that the agent can call during a conversation.
 
-By the end, you will:
-- Understand key connector concepts (actions, connections, authentication, limits).
-- Add one read-only connector tool your agent can call automatically (no authentication required).
-- Optionally add an authenticated connector tool and handle inputs and errors.
+When you finish this module, you'll achieve the goals and complete the tasks in the following list:
+
+- Understand key connector concepts such as actions, connections, authentication, and limits.
+- Add one read-only connector action as a tool that your agent can autonomously and directly call without needing authentication.
+- ptionally add an authenticated connector action as a tool that handles inputs and errors.
 - Apply best practices for safe, reliable tool use in conversational scenarios.
 
-We will keep the primary flow simple (no agent parameters and no on-behalf-of (OBO) yet). In Module 04 you will parameterize inputs, and in Module 05 you will add user context.
+This module keeps the primary flow simple without using [agent parameters](https://learn.microsoft.com/azure/logic-apps/agent-workflows-concepts#key-concepts) or [on-behalf-of (OBO) authorization](https://learn.microsoft.com/entra/identity-platform/v2-oauth2-on-behalf-of-flow). In Module 4, you learn how to parameterize inputs. In Module 5, you learn how to add OBO authorization.
 
-Helpful resources:
-- Azure Logic Apps connectors overview: https://learn.microsoft.com/en-us/connectors/overview
+For more information, see [Connectors overview for Azure Logic Apps connectors](https://learn.microsoft.com/azure/connectors/introduction)
 
----
+## Connectors and their relationship to tools
 
-## Why connectors add value for conversational agents
+In Azure Logic Apps, *connectors* offer prebuilt operations that provide a fast, secure, and reliable way for an agent to take an action in the real world without needing you to write integration code. The following table describes other benefits that connectors offer when you build integration workflows:
 
-Azure Logic Apps connectors provide a fast, secure, and reliable way to let an agent take action in the real world without custom integration code.
+| Benefit | Description |
+|---------|-------------|
+| Breadth of integrations | Choose operations offered by more than 1,400 connectors across Microsoft 365, Azure services, SaaS apps, developer tools, and data platforms. |
+| Faster time to value | Use declarative actions so you don't have to build and maintain custom API clients. Reduce boilerplate, errors, and maintenance overhead. |
+| Secure connections | Standardize authentication with connections that can use Open Authorization (OAuth 2.0), API keys, or managed identity. Store secrets securely and reuse connections across tools. |
+| Reliability | Take advantage of built-in retries, pagination, and robust error surfaces exposed in run history and monitoring. |
+| Consistent patterns | Simplify how an agent calls operations and how you compose workflows around them by using a unified model. |
+| Observability | Trace tool calls, diagnose failures, and tune prompts by using workflow run history, monitoring, and telemetry. |
+| Enterprise readiness | Combine connectors with network isolation and other platform controls to meet organizational requirements. |
 
-- Breadth of integrations: Access a large catalog of prebuilt connectors across Microsoft 365, Azure services, SaaS apps, developer tools, and data platforms.
-- Faster time to value: Use declarative actions instead of building and maintaining custom API clients. Reduce boilerplate, errors, and maintenance overhead.
-- Secure connections: Standardize authentication with connections (Open Authorization (OAuth 2.0), API keys, managed identity). Store secrets securely and reuse connections across tools.
-- Reliability features: Take advantage of built-in retries, pagination, and robust error surfaces exposed in run history and monitoring.
-- Consistent patterns: A uniform action model simplifies how the agent invokes operations and how you compose flows around them.
-- Observability: Use run history, monitoring, and telemetry to trace tool calls, diagnose failures, and tune prompts.
-- Enterprise readiness: Combine connectors with network isolation and other platform controls to meet organizational requirements.
-
-For conversational scenarios, connectors turn external system operations into agent tools. Provide a clear tool name and description, and the agent can decide when to call the connector and how to summarize results back to the user.
-
-> [!TIP]
-> Prefer managed connectors over raw HTTP when available to benefit from built-in authentication, throttling guidance, schemas, and monitoring.
-
----
-
-## What are connectors, and how do they relate to tools?
-
-- Connectors
-	- Reusable integrations that let Azure Logic Apps call external services (Microsoft 365, GitHub, Azure services, SaaS apps, and more).
-	- Expose operations as triggers (event-based starts) and actions (steps you can call).
-	- Use a connection that holds authentication and environment-specific settings.
-	- Managed connectors vs. built-in actions: managed connectors often require connections; built-in actions (HTTP, Compose, Variables) do not.
-
-- Tools (in a conversational agent)
-	- A "tool" is a capability the agent can invoke to satisfy a user's request (for example, "get weather," "look up a ticket").
-	- In Azure Logic Apps agents, a tool can be backed by a connector action, a built-in action, or another workflow.
-	- You provide the tool’s name and description so the agent knows when to call it. Good descriptions drive better tool selection.
+In conversational agent scenarios, connectors turn operations that work with external services and systems into tools that agents can use. When you provide a clear tool name and description, the agent can better decide when to call connector operations as tools and how to summarize results back to the user. To benefit from built-in authentication, throttling guidance, schemas, and monitoring, use connectors when available, rather than raw HTTP.
 
 > [!NOTE]
-> Connector triggers are not supported in conversational agents. Conversational agents start when a chat session is initiated (for example, from an integrated chat client in Azure Logic Apps). There is no separate workflow trigger inside the agent; tool actions are invoked by the agent during the conversation.
----
+>
+> Conversational agent workflows don't support connector triggers. Conversational agents start when a 
+> chat session starts, from the chat client integrated with Azure Logic Apps. No separate workflow
+> trigger exists in the agent because the agent directly calls tool actions during the conversation.
+
+The following table helps map the relationship between connector operations and the tools that conversational agents use:
+
+| Component | Description |
+| --- | --- |
+| Connectors | - Provide operations that you use to create reusable integrations where Azure Logic Apps can call external services, such as Microsoft 365, GitHub, Azure services, SaaS apps, and more. <br><br>- Expose connector operations as triggers (event-based starts) and actions (steps you can call). <br><br>- Use a connection that holds authentication and environment-specific settings. <br><br>- Managed connectors vs. built-in actions: managed connectors often require connections; built-in actions (HTTP, Compose, Variables) do not. |
+| Tools | - A single action or action sequence that agent can invoke to satisfy a user's request (for example, "get weather," "look up a ticket").
+	- In Azure Logic Apps agents, a tool can be backed by a connector action, a built-in action, or another workflow.
+	- You provide the tool’s name and description so the agent knows when to call it. Good descriptions drive better tool selection.
 
 ## Prerequisites
 
