@@ -1,164 +1,186 @@
 ---
-title: Add user context to your tools (Module 05)
-description: Learn how to run connector actions with the signed-in user's identity (on-behalf-of) in conversational Azure Logic Apps agents.
-ms.service: logic-apps
-ms.topic: tutorial
-ms.date: 08/13/2025
+title: Set up on-behalf-of authorization to your tools - Module 05
+description: Learn how to run connector actions with the signed-in user identity by using on-behalf-of (OBO) authorization in conversational agent workflows for Azure Logic Apps.
+ms.service: azure-logic-apps
 author: edwardyhe
 ms.author: edwardyhe
+ms.topic: tutorial
+ms.date: 08/18/2025
+# Customer goals for this module:
+# - Describe when to use and how to set up OBO. // Only if OBO works from portal chat client - otherwise defer until after deployment section.
+# - Provide some client code if useful, but link to later A2A section so customers have context.
 ---
 
-# Add user context to your tools (Module 05)
+# Run connector actions with the signed-in user identity (Module 05)
 
-In this module, you will learn how to run connector actions with the signed-in user's identity so the agent acts on the user's behalf. This approach is commonly called on-behalf-of (OBO). You will decide when to use user context, configure connections appropriately, test with different users, and understand limitations.
+In this module, you learn how to set up an agent that acts *on behalf of* (OBO) the signed-in user, meaning that the agent can run connector actions by using that user's identity. This module describes scenarios for where to add OBO authorization, known also as *user context*, how to configure the appropriate connections, test with different users, and learn the limitations.
 
-By the end, you will:
+When you finish this module, you'll achieve the goals and complete the tasks in the following list:
+
 - Understand user-delegated versus app-only identities for tools.
-- Configure a connector-backed tool to run with user context when supported.
+- Configure a connector-backed tool to run with user context.
 - Test behavior changes across users with different permissions.
 - Apply best practices for consent, scopes, and error handling.
 
-> [!IMPORTANT]
-> User context in conversational agents is supported only with Microsoft first-party connectors using per-user (delegated) connections and requires App Service Authentication (EasyAuth) to be enabled on your logic app (Standard). The integrated Azure Logic Apps chat client handles token delegation for per-user connections.
+For more information, see the following articles:
 
-Helpful resources:
-- Microsoft identity platform: on-behalf-of flow: https://learn.microsoft.com/entra/identity-platform/v2-oauth2-on-behalf-of-flow
-- App Service authentication and authorization overview (EasyAuth): https://learn.microsoft.com/azure/app-service/overview-authentication-authorization
-- Configure Microsoft Entra ID provider (App Service authentication): https://learn.microsoft.com/azure/app-service/configure-authentication-provider-aad
+- [Microsoft identity platform and OAuth 2.0 On-Behalf-Of flow](https://learn.microsoft.com/entra/identity-platform/v2-oauth2-on-behalf-of-flow)
+- [Authentication and authorization in Azure App Service and Azure Functions](https://learn.microsoft.com/azure/app-service/overview-authentication-authorization)
+- [Configure your App Service or Azure Functions app to use Microsoft Entra sign-in](https://learn.microsoft.com/azure/app-service/configure-authentication-provider-aad)
 
----
+## Identities for tools
 
-## When to use user context (OBO)
+The following table describes different identities that a tool can use to run actions:
 
-Use user context (where supported) when a tool must respect the signed-in user's permissions, licenses, or personal data boundaries. Common examples:
+| Identity | Description |
+|----------|-------------|
+| Per-user (OBO) | A connector action runs by using a delegated token for the signed-in user. The result depends on the user's permissions and licenses. |
+| App-only (application identity) | A connector action runs by using a managed identity or an app or service principal. The result depends on app permissions and configuration. <br><br>**Important**: Use an app-only identity when the tool performs shared operations that aren't tied to a user like posting to a shared channel, running a back office job, or using a service account. |
+| Connection reference | Your workflow binds each connector action to a specific connection that determines how to perform authentication. |
 
-- Microsoft 365: reading a user's mail, calendar, files, or profile.
-- ServiceDesk/ITSM: actions that should be attributed to the requester.
+## Scenarios for on-behalf-of (OBO) authorization
+
+When you need a tool to respect the signed-in user's permissions, licenses, or personal data boundaries, set up OBO authorization when available. The following list provides a few common example scenarios:
+
+- Microsoft 365: Read a person's mail, calendar, files, or profile.
+- ServiceDesk or ITSM: Attribute actions to the requester.
 - Enterprise APIs with per-user authorization or auditing requirements.
 
-Use app-only identity when the tool performs shared operations not tied to a user (for example, posting to a shared channel, running a back-office job, or using a service account).
+Many solutions use mixed authorization methods. For example, a solution might read user data with OBO for personalization, and then perform a write operation by using an app-only identity after explicit confirmation.
 
-> [!TIP]
-> Many solutions use a mix: read user data with OBO for personalization, then perform a write with an app identity after explicit confirmation.
+## Limitations
 
----
-
-## Concepts: identities for tools
-
-- User-delegated (OBO): the connector action runs using the signed-in user's delegated token. The result depends on the user's permissions and licenses.
-- App-only (application identity): the connector action runs using an app/service principal or managed identity. The result depends on app permissions and configuration.
-- Connection reference: your workflow binds each connector action to a specific connection that determines how authentication is performed.
-
----
+In conversational agent workflows, only connectors that work with Microsoft services or systems and use delegated, per-user connections support OBO authorization.
 
 ## Prerequisites
 
-- An Azure subscription and a logic app (Standard) with your conversational agent from previous modules.
-- Microsoft first-party connector that supports per-user (delegated) connections (for example, Microsoft 365, Microsoft Graph, SharePoint) and tenant admin consent if required.
-- App Service Authentication (EasyAuth) enabled on the logic app (Standard).
-- Integrated Azure Logic Apps chat client (handles token delegation for per-user connections). If you use a custom client, it must pass the user's token to the agent.
-- At least two test users with different permissions in your tenant (for example, one with access to a mailbox or site; one without).
+- An Azure account and subscription. If you don't have a subscription, [sign up for a free Azure account](https://azure.microsoft.com/free/?WT.mc_id=A261C142F).
+
+- A Standard logic app resource and conversational agent workflow from previous modules.
+
+  - The logic app resource requires that you set up Easy Auth, previously known as App Service Authentication, on your Standard logic app resource.
+
+  - The conversational agent workflow requires a connector operation that works with a Microsoft service or system. The connection must also support delegated, per-user connections, for example, Microsoft 365, SharePoint, or Microsoft Graph. If required, the connection might also need tenant administrator consent.
+
+    > [!TIP]
+    > 
+    > Make sure to keep tool descriptions concise and include guidance about the data that they access,
+    > for example, such a description might say "Gets the signed-in user's next five calendar events."
+
+- The chat client integrated with Azure Logic Apps.
+
+  This chat client handles token delegation for per-user connections. If you want to use a custom client, that client must pass the user token to the agent.
+
+  > [!NOTE]
+  >
+  > If you are building a custom client that can't pass a user token yet, complete the concepts with the app-only connections.
+  > In a later module, you integrate a custom client that supplies the user's access token to the agent.
+
+- At least two test users for conversing through chat with different permissions in your tenant.
+
+  For example, one user might have access to a mailbox or website, while the other user doesn't have access.
+
+## Part 1 - Set up Easy Auth on your logic app
+
+Your Standard logic app resource requires having Easy Auth set up so that the delegated identity can flow. At runtime, the chat client integrated with Azure Logic Apps prompts each first-time user to authenticate and uses their identity afterwards.
+
+1. In the [Azure portal](https://portal.azure.com), open your Standard logic app resource.
+1. On the resource sidebar, under **Settings**, select **Authentication**.
+1. On the **Authentication** page, select **Add identity provider**. From the **Identity provider** list, select **Microsoft**.
+1. Create or select an app registration by using the options for conversational agents.
+1. Set up additional checks for the sign-in process, based on your scenario.
+1. Require authentication for requests as appropriate for your environment.
+1. When you're done, select **Add** to save your selections.
+
+For more information, see the following articles:
+
+- [Authentication and authorization in Azure App Service and Azure Functions](https://learn.microsoft.com/azure/app-service/overview-authentication-authorization)
+- [Configure your App Service or Azure Functions app to use Microsoft Entra sign-in](https://learn.microsoft.com/azure/app-service/configure-authentication-provider-aad)
+
+## Part 2 - Choose the identity model for each tool action
+
+1. Determine the authorization to use for each tool action.
+
+   - For "my data" or user-personalized operations, such as "Get my upcoming meetings", use OBO.
+   - For shared resources or automations, such as "Post today's health status to the operations channel", Use app-only authorization.
+
+1. Document the required scopes or permissions for each tool so you can consent them later.
+
+## Part 3 - Create a per-user, delegated connection
+
+To support delegated user access, create the connection so your tool can use a connector operation:
+
+1. In the [Azure portal](https://portal.azure.com), open the conversational agent workflow in the designer.
+
+1. In the designer, add or select the connector action that you want your workflow to run with OBO, for example, a Microsoft 365 action.
+
+1. On the connection information pane, select **Create new**, and then select **Create as per-user connection?**, which is required and available for Microsoft service or system connectors.
+
+   > [!IMPORTANT]
+   >
+   > You must create per-user connections with the **Create as per-user connection?** option. 
+   > You can't convert an existing app-only connection to a per-user connection, so you must
+   > create a new per-user connection. If you don't see the per-user connection option,
+   > you might be editing an app-only connection. In thise case, create a new connection.
+
+1. Complete the sign-in and consent flow.
+
+   At this point, any sign-in exists only for validation or consent. At runtime, each chat user authenticates at first use, and their identity is used for subsequent calls.
+
+### Expectations for chat first use and reuse
+
+When a tool first uses a connector action with per-user authorization in the chat client, an authentication prompt appears for the user to sign in. After the user signs in, subsequent calls made with same per-user connection don't require reauthentication.
 
 > [!NOTE]
-> If you are building a custom client and cannot pass a user token yet, complete the concepts with app-only connections. In Module 10, you will integrate a custom client that supplies the user's access token to the agent.
+>
+> The connection uses credentials that belong to the user in the chat session, not the connection creator.
+> This behavior makes sure that the tool runs with the signed-in user's permissions.
 
-### Configure EasyAuth (App Service Authentication)
+## Part 4 - Test with users who have different access
 
-Enable EasyAuth on your logic app (Standard) so delegated user identity can flow to eligible first-party connectors:
+1. Open the chat client, and start a session as User A.
+1. Ask the agent to perform an operation that requires OBO authorization, for example, "Show my upcoming events today".
+1. Confirm the tool runs successfully, and the results reflect the data and permissions for User A.
+1. Repeat these steps as User B. Verify the tool runs successfully, and the results reflect the data and permissions for User B.
 
-1. In the Azure portal, open your logic app (Standard) resource.
-2. Select Authentication in the left navigation.
-3. Select Add identity provider and choose Microsoft (Microsoft Entra ID).
-4. Follow the guided setup to create or select an app registration and configure sign-in. Require authentication for requests as appropriate for your environment.
-5. Save the configuration.
+   Based on access, results for User B might differ from User A.
 
-Helpful links:
-- App Service authentication and authorization overview: https://learn.microsoft.com/azure/app-service/overview-authentication-authorization
-- Configure Microsoft Entra ID provider (App Service authentication): https://learn.microsoft.com/azure/app-service/configure-authentication-provider-aad
+## Part 5 - Plan for client integration (token pass-through)
 
----
+If your production experience uses a custom chat client that's web-based, mobile, or another service, plan to provide the user's access token to the agent and implement the OBO flow, based on the following process:
 
-## Step 1 — Choose the identity model per tool action
+1. Capture the user's sign-in through your app. Get an access token for the target resource, for example, Microsoft Graph, with the required scopes.
+1. Pass the token to your agent call, based on your integration model (Module 10).
+1. Configure your tool to use the delegated token or a connection that recognizes the user's context.
 
-For each tool action, decide how it should authenticate:
+For more information, see Module 10 — Connect your agents using A2A protocol for details and sample client code.
 
-- Use user context (OBO) for "my data" or user-personalized operations (for example, "Get my upcoming meetings").
-- Use app-only for shared resources or automations (for example, "Post today's health status to the ops channel").
+## Review best practices
 
-Document the required scopes/permissions for each tool so you can consent them later.
+The following table describes best practices to consider for OBO authorization scenarios:
 
----
+| Concept | Description |
+|---------|-------------|
+| Least privilege | Avoid broad permissions and request the minimal delegated scopes needed for each tool. |
+| Administrator consent | Reduce consent prompts during chat by getting tenant administrator consent where required. |
+| Sensitive data | Avoid showing personally identifiable information (PII) or secrets. Redact or summarize as needed. |
+| Mixed identity patterns | Set up OBO authorization for read operations and use app-only authorization for write operations after explicit confirmation. |
+| Clear feedback | Instruct the agent to briefly summarize permission errors and suggest remediation, for example, "You might not have access to this mailbox". |
+| Auditing and logging | Track and analyze the tools that run and the identity (user or app) they use by reviewing the workflow run history and telemetry. |
 
-## Step 2 — Create a per-user connection (delegated)
+## Troubleshoot problems
 
-Create a new connector connection used by your tool to support delegated user access:
+The following table describes some common problems and troubleshooting suggestions:
 
-1. In your agent workflow, add or open the connector action you want to run with user context (for example, Microsoft Graph or Microsoft 365 action).
-2. When prompted to select or create a connection, select Create new and enable the "Create as per-user connection?" option in the connection dialog. This checkbox is required and is available only for Microsoft first-party connectors. If you do not see it, you may be editing an existing app-only connection—create a new connection instead.
-3. Complete the sign-in/consent flow. Any sign-in here is for validation/consent only; at runtime, each chat user will authenticate on first use and their identity will be used for subsequent calls.
+| Problem | Suggestion |
+|---------|------------|
+| 401/403 Unauthorized | Confirm that the connection uses delegated permissions and the user has access to the resource. Check conditional access policies. |
+| Consent or scope mismatch | Confirm that the requested scopes match the operation. Recreate the connection if scopes changed. |
+| Token audience (aud) errors | Confirm that the access token is issued for the correct resource when using a custom client. |
+| Rate limits (429 errors) | Apply backoff or ask the user to narrow the request. |
+| Mixed identity confusion | Check the connection that a tool uses. Make sure to clearly label app-only and user-delegated connections. |
 
-> [!IMPORTANT]
-> Per-user connections must be created using the "Create as per-user connection?" option and are supported only for Microsoft first-party connectors. You cannot convert an existing app-only connection to per-user; create a new per-user connection. Ensure EasyAuth is enabled on your logic app (Standard) so delegated identity can flow. At runtime in the integrated Azure Logic Apps chat client, each user is prompted on first use and their identity is used thereafter.
-
-### What to expect in chat (first use and reuse)
-
-When a tool first uses a per-user connector action in the integrated Azure Logic Apps chat client, an authentication prompt appears for the user to sign in (for example, an "Authentication Required" panel with a Sign in button). After the user signs in once, subsequent calls using the same per-user connection do not require re-authentication.
-
-> [!NOTE]
-> The credentials used are those of the user in the chat session, not the creator of the per-user connection. This ensures the tool runs with the signed-in user's permissions.
-
----
-
-## Step 3 — Test with users who have different access
-
-1. Open the chat client and start a session as User A.
-2. Ask the agent to perform an operation that requires user context (for example, "Show my upcoming events today").
-3. Confirm the tool runs successfully and results reflect User A's data/permissions.
-4. Repeat as User B and verify the tool runs successfully and reflects User B's data/permissions (results may differ from User A based on access).
-
-> [!TIP]
-> Keep tool descriptions concise and include guidance about what data they access. For example: "Gets the signed-in user's next five calendar events."
-
-
-## Step 4 — Plan for client integration (token pass-through)
-
-If your production experience uses a custom chat client (web, mobile, or another service), plan to supply the user's access token to the agent and implement the OBO flow.
-
-- Capture the user's sign-in via your app and obtain an access token for the target resource (for example, Microsoft Graph) with the required scopes.
-- Pass the token to your agent invocation per your integration model (covered in Module 10).
-- Configure your tool to use the delegated token or a connection that recognizes the user's context.
-
-See Module 10 — Connect your agents using A2A protocol for details and sample client code.
-
----
-
-## Best practices
-
-- Least privilege: request the minimal delegated scopes needed for each tool and avoid broad permissions.
-- Admin consent: obtain tenant admin consent where required to reduce consent prompts during chat.
-- Clear feedback: instruct the agent to summarize permission errors briefly and suggest remediation (for example, "You might not have access to this mailbox").
-- Sensitive data: avoid echoing PII or secrets. Redact or summarize as needed.
-- Mixed identity patterns: use user context for reads and app-only for writes after explicit confirmation.
-- Auditing and logging: use run history and telemetry to track which tools ran and under which identity (user or app).
-
----
-
-## Troubleshooting
-
-- 401/403 Unauthorized: verify the connection uses delegated permissions and the user has access to the resource. Check conditional access policies.
-- Consent or scope mismatch: ensure requested scopes match the operation. Recreate the connection if scopes changed.
-- Token audience (aud) errors: confirm the access token is issued for the correct resource (for example, Microsoft Graph) when using a custom client.
-- Rate limits (429): apply backoff or ask the user to narrow the request.
-- Mixed identity confusion: double-check which connection a tool uses. Ensure app-only and user-delegated connections are clearly labeled.
-
----
-
-## Next steps
+## Related content
 
 - Module 06 — Extend your tool functionality with patterns (chaining, fallback, caching).
 - Module 10 — Connect your agents using A2A protocol (client integration and delegated tokens).
-=======
-# Module 05 - Add user context to your tools
-
-- Explain when OBO is needed and how to configure it (only if OBO works from portal chat client - otherwise defer until after deployment section)
-- Some client code if useful but link to later a2a section so readers have context
