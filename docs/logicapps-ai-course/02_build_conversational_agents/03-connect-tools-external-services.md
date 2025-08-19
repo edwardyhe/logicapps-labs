@@ -61,7 +61,7 @@ The following table helps map the relationship between connector operations and 
 
 - A Standard logic app resource and conversational agent workflow with the model set up from previous modules.
 
-  For the examples, this workflow include
+  For the examples, this workflow can use the following options:
 
   - Primary example: RSS connector, which doesn't need authentication.
   - Optional alternative: MSN Weather connector, which doesn't need authentication.
@@ -93,18 +93,18 @@ To more easily demonstrate the conversational agent pattern from end to end, thi
 
 1. On the designer, inside the agent and under **Add tool**, select the plus sign (+) to open the pane where you can browse available actions.
 
-1. On the **Add an action** pane, follow these [general steps](https://learn.microsoft.com/azure/logic-apps/create-workflow-with-trigger-or-action?tabs=standard#add-action) to add the **RSS** action named **List items in feed** to the empty tool.
+1. On the **Add an action** pane, follow these [general steps](https://learn.microsoft.com/azure/logic-apps/create-workflow-with-trigger-or-action?tabs=standard#add-action) to add the **RSS** action named **List all RSS feed items** to the empty tool.
 
 1. Provide a clear and brief name and desription for the tool, for example:
 
    - Name: **Get latest RSS**
-   - Description: **Retrieves latest posts from a specific RSS feed and returns the titles and links for a summary.**
+   - Description: **Gets the latest posts from a specific RSS feed and returns the titles and links for a summary.**
 
-     The large language model (LLM) uses the tool description to help the agent decide when to call the tool. Keep the description short, specific, and outcome-focused.
+     The large language model (LLM) for your agent uses the tool description to help the agent decide when to call the tool. Keep the description short, specific, and outcome-focused.
 
 ### Step 2 - Set up the connector action
 
-1. In the **RSS** action that you added, provide the following information:
+1. In the **List items in feed** action, provide the following information:
 
    | Parameters | Description |
    |------------|-------------|
@@ -119,8 +119,11 @@ To more easily demonstrate the conversational agent pattern from end to end, thi
 - If your designer supports selecting outputs, include only fields you need (title, link).
 - Save the workflow.
 
-### Step 5 — Test in chat
-- Ask: "What is new from the Azure Logic Apps blog?"
+### Step 4 — Test your tool in chat
+
+1. On the designer toolbar, select **Run** > **Run**.
+
+1. In the chat user interface, - Ask: "What is new from the Azure Logic Apps blog?"
 - Verify the tool is invoked and the agent summarizes the items with links.
 - Use Monitoring/Run history to confirm tool calls and action success.
 
