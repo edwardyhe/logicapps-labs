@@ -22,7 +22,7 @@ When you finish this module, you'll achieve the goals and complete the tasks in 
 
 This module keeps the primary flow simple without using [agent parameters](https://learn.microsoft.com/azure/logic-apps/agent-workflows-concepts#key-concepts) or [on-behalf-of (OBO) authorization](https://learn.microsoft.com/entra/identity-platform/v2-oauth2-on-behalf-of-flow). In Module 4, you learn how to parameterize inputs. In Module 5, you learn how to add OBO authorization.
 
-For more information, see [Connectors overview for Azure Logic Apps connectors](https://learn.microsoft.com/azure/connectors/introduction)
+For more information, see [Connectors overview for Azure Logic Apps connectors](https://learn.microsoft.com/azure/connectors/introduction).
 
 ## Connectors and their relationship to tools
 
@@ -42,9 +42,10 @@ In conversational agent scenarios, connectors turn operations that work with ext
 
 > [!NOTE]
 >
-> Conversational agent workflows must always start with the default **A2A Trigger**, and not any other trigger. 
-> Conversational agents start running when a chat session starts from the integrated chat client in Azure Logic Apps.
-> No separate workflow trigger exists in the agent because the agent directly calls tool actions during the conversation.
+> Conversational agent workflows always start with the default trigger named **When a new chat session starts**,
+> and not any other trigger. Conversational agents start running when a chat session starts from the integrated
+> chat client in Azure Logic Apps. No separate workflow trigger exists in the agent because the agent directly
+> calls tool actions during the conversation.
 
 The following table helps map the relationship between connector operations and the tools that conversational agents use:
 
@@ -74,7 +75,7 @@ The following table helps map the relationship between connector operations and 
 
 | Concept | Description |
 |---------|-------------|
-| Triggers versus actions | Conversational agent workflows must use the default **A2A Trigger**. Autonomous agent workflows can use any available trigger. Agents in both workflows use actions as tools. |
+| Triggers versus actions | Conversational agent workflows must use the default trigger named **when a new session starts**. Autonomous agent workflows can use any available trigger. Agents in both workflows use actions as tools. |
 | Connections and authentication | OAuth 2.0, API key, managed identity, or none, based on the connector. |
 | Inputs and outputs | Actions define parameters and return JSON. The agent summarizes outputs for the end user. |
 | Limits and reliability | Expect throttling errors (HTTP 429), timeouts, retries, and pagination. Design your prompts and tools to gracefully handle errors and exceptions. |
