@@ -1,12 +1,12 @@
 ---
 title: Connect tools to external services - Module 03
-description: Learn how to connect a conversational agent workflow in Azure Logic Apps to external services by using connectors and how to expose connector actions as tools for agents.
+description: Learn how to connect a conversational agent workflow in Azure Logic Apps to external services by using connectors and how to expose connector actions as tools for models, agents, and MCP clients to use.
 ms.service: azure-logic-apps
 author: edwardyhe
 ms.author: edwardyhe
 ms.topic: tutorial
-ms.date: 08/13/2025
-#Customer intent: As an integration solution sevelo
+ms.date: 08/26/2025
+#Customer intent: As an integration solution developer, I want to know how to connect my conversational agent workflow to external services and expose connector actions as tools for agents and models to use.
 ---
 
 # Connect your tools to external services (Module 03)
@@ -57,14 +57,13 @@ The following table helps map the relationship between connector operations and 
 
 - An Azure account and subscription. If you don't have a subscription, [sign up for a free Azure account](https://azure.microsoft.com/free/?WT.mc_id=A261C142F).
 
-- A conversational logic app agent set up in the previous module(s) with model/provider configured.
+- A Standard logic app resource and a conversational agent workflow with the model that you set up in previous modules.
 
-- A Standard logic app resource and conversational agent workflow with the model set up from previous modules.
+  If you don't have this workflow, see [Module 1 - Create your first conversational agent](01-create-first-conversational-agent.md).
 
   For the examples, this workflow can use the following options:
 
-  - Primary example: RSS connector, which doesn't need authentication.
-  - Optional alternative: MSN Weather connector, which doesn't need authentication.
+  - Primary example: MSN Weather connector, which doesn't need authentication.
   - Optional example with authentication: A GitHub account with either OAuth 2.0 or a personal access token (PAT) with minimal read scopes.
 
 > [!NOTE]
@@ -81,74 +80,71 @@ The following table helps map the relationship between connector operations and 
 | Limits and reliability | Expect throttling errors (HTTP 429), timeouts, retries, and pagination. Design your prompts and tools to gracefully handle errors and exceptions. |
 | Connection references | Your workflow binds to a specific connection at runtime. |
 
-## Part 1 - Expose a basic read-only RSS connector as a tool (primary example)
+## Part 1 - Expose a basic read-only connector as a tool (MSN Weather)
 
 To more easily demonstrate the conversational agent pattern from end to end, this example doesn't use authentication or agent parameters.
 
-### Step 1 - Add a tool for your agent
+### Step 1 - Set up your agent
 
 1. In the [Azure portal](https://portal.azure.com), open your Standard logic app resource.
 
-1. Open the conversational agent workflow in the designer.
+1. Find and open your conversational agent workflow in the designer.
+
+1. On the designer, select the agent action. For the system instructions, enter **You are an helpful agent that provides weather information.**
+
+   :::image type="content" source="media/03-connect-tools-external-services/start.png" alt-text="Screenshot shows designer with conversational agent." lightbox="media/03-connect-tools-external-services/start.png":::
+
+### Step 2 - Add a tool for your agent
 
 1. On the designer, inside the agent and under **Add tool**, select the plus sign (+) to open the pane where you can browse available actions.
 
-1. On the **Add an action** pane, follow these [general steps](https://learn.microsoft.com/azure/logic-apps/create-workflow-with-trigger-or-action?tabs=standard#add-action) to add the **RSS** action named **List all RSS feed items** to the empty tool.
+1. On the **Add an action** pane, follow these [general steps](https://learn.microsoft.com/azure/logic-apps/create-workflow-with-trigger-or-action?tabs=standard#add-action) to add the **MSN Weather** action named **Get current weather** to the empty tool.
 
 1. Provide a clear and brief name and desription for the tool, for example:
 
-   - Name: **Get latest RSS**
-   - Description: **Gets the latest posts from a specific RSS feed and returns the titles and links for a summary.**
+   - Name: **Get current Seattle weather**
+   - Description: **Gets the current weather in Seattle.**
 
      The large language model (LLM) for your agent uses the tool description to help the agent decide when to call the tool. Keep the description short, specific, and outcome-focused.
 
-### Step 2 - Set up the connector action
+   The following screenshot shows what the tool looks like at this point:
 
-1. In the **List items in feed** action, provide the following information:
+   :::image type="content" source="media/03-connect-tools-external-services/add-msn-weather.png" alt-text="Screenshot shows designer with conversational agent." lightbox="media/03-connect-tools-external-services/add-msn-weather.png":::
 
-   | Parameters | Description |
-   |------------|-------------|
-   | **Feed URL** | A fixed URL without any parameters, for example: **https://techcommunity.microsoft.com/gxcuf89792/rss/board?board.id=AzureLogicApps** |
-   | **Number of items** | Specify 5-10 times to keep the agent responses concise. |
+### Step 3 - Set up the connector action
+
+1. In the **Get current weather** action, provide the following information:
+
+   | Parameters | Value |
+   |------------|-------|
+   | **Location** | **Seattle, US** |
+   | **Units** | **Imperial** |
+
+   :::image type="content" source="media/03-connect-tools-external-services/get-currrent-weather.png" alt-text="Screenshot shows MSN Weather action set up for Seattle, US." lightbox="media/03-connect-tools-external-services/get-currrent-weather.png":::
 
 1. Save your workflow.
 
-### Step 3 — Map outputs for the agent
-
-- Keep outputs compact. The RSS action returns items with title, primaryLink, publishDate, etc.
-- If your designer supports selecting outputs, include only fields you need (title, link).
-- Save the workflow.
-
 ### Step 4 — Test your tool in chat
 
-1. On the designer toolbar, select **Run** > **Run**.
+1. On the designer toolbar, select **Chat**.
 
-1. In the chat user interface, - Ask: "What is new from the Azure Logic Apps blog?"
-- Verify the tool is invoked and the agent summarizes the items with links.
-- Use Monitoring/Run history to confirm tool calls and action success.
+1. In the chat user interface, ask the following question: **What is the current weather in Seattle?**
 
-> [!NOTE]
-> Inputs are hardcoded to avoid parameters in this module. You will parameterize them in Module 04. You can substitute any no-auth connector using the same pattern.
+1. Check that the response is what you expect, for example:
 
----
+   :::image type="content" source="media/03-connect-tools-external-services/portal-chat.png" alt-text="Screenshot shows integrated chat client." lightbox="media/03-connect-tools-external-services/portal-chat.png":::
 
-## Optional alternative: Read-only connector tool (MSN Weather)
+### Step 5 — Check tool in monitoring view
 
-Prefer weather instead of RSS? Use the MSN Weather connector.
+1. On the workflow sidebar, under **Tools**, select **Run history**.
 
-### Steps
-- Add a Tool -> Connector action -> search "MSN Weather".
-- Choose "Get current weather".
-- Connection: no authentication required; create with defaults if prompted.
-- Configure with fixed inputs (no parameters yet), for example, Location = "Seattle, US", Units = "imperial".
-- Tool name: GetCurrentWeather
-- Description: "Gets current weather for a fixed location and returns temperature and conditions for summarization."
-- Test by asking: "What is the weather right now?"
+1. Select the most recent workflow run. 
 
-> [!TIP]
-> In Module 04, convert Location and Units into agent parameters so the agent can pass values dynamically.
+1. Confirm that the agent succesfully called the tool and ran the action.
 
----
+   :::image type="content" source="media/03-connect-tools-external-services/weather-monitoring-view.png" alt-text="Screenshot shows monitoring view with successful tool and action call." lightbox="media/03-connect-tools-external-services/weather-monitoring-view.png":::   
+
+For more information, see [Module 2 - Debug your agent](02-debug-agent.md).
 
 ## Part 2 (optional): Expose an authenticated connector as a tool (GitHub)
 
