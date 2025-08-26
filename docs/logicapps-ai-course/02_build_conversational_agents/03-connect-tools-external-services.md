@@ -235,6 +235,3 @@ Here's a recap for the pattern to use:
 
 - [Module 04 - Add parameters to your tools (accept dynamic inputs from the agent)](04-add-parameters-to-tools.md)
 - [Module 05 - Add user context to your tools (on-behalf-of patterns)](05-add-user-context-to-tools.md)
-
-o agent parameters and no OBO yet - that is later
-
