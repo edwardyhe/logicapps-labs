@@ -68,7 +68,7 @@ The following table helps map the relationship between connector operations and 
 
 > [!NOTE]
 >
-> This module focuses on connector-backed tools. Later modules cover agent parameters and on-behalf-of (OB) authorization patterns.
+> This module focuses on connector-backed tools. Later modules cover agent parameters and on-behalf-of (OBO) authorization patterns.
 
 ## Connector concepts for this module
 
