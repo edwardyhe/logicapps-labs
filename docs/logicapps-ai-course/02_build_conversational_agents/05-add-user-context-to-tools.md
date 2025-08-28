@@ -232,17 +232,13 @@ You can follow a similar pattern when you use other Microsoft 365 connectors, su
 
 ### Part 3 - Test with users who have different access
 
-1. On the designer toolbar, select **Chat**.
+1. In the chat client outside the Azure portal, start a session as User A.
 
-1. In the chat user interface, ask the following question: **Show me the details of the demo GitHub issue.**
+1. Ask the agent to perform an operation that requires OBO authorization, for example, **Show my upcoming events today**.
 
-2. Open the chat client, and start a session as User A.
+1. Confirm that the tool successfully runs and that the results reflect the data and permissions for User A.
 
-1. Ask the agent to perform an operation that requires OBO authorization, for example, "Show my upcoming events today".
-
-1. Confirm the tool runs successfully, and the results reflect the data and permissions for User A.
-
-1. Repeat these steps as User B. Verify the tool runs successfully, and the results reflect the data and permissions for User B.
+1. Repeat these steps as User B. Confirm that the tool successfully runs and that the results reflect the data and permissions for User B.
 
    Based on access, results for User B might differ from User A.
 
@@ -251,10 +247,12 @@ You can follow a similar pattern when you use other Microsoft 365 connectors, su
 If your production experience uses a custom chat client that's web-based, mobile, or another service, plan to provide the user's access token to the agent and implement the OBO flow, based on the following process:
 
 1. Capture the user's sign-in through your app. Get an access token for the target resource, for example, Microsoft Graph, with the required scopes.
-1. Pass the token to your agent call, based on your integration model (Module 10).
-1. Configure your tool to use the delegated token or a connection that recognizes the user's context.
 
-For more information, see Module 10 — Connect your agents using A2A protocol for details and sample client code.
+1. Pass the token to your agent call, based on your integration model (Module 10).
+
+1. Set up your tool to use the delegated token or a connection that recognizes the user's context.
+
+For more information and sample client code, see [Module 10 - Connect your agents using A2A protocol](10-connect-agents-a2a-protocol.md).
 
 ## Review best practices
 
@@ -283,5 +281,5 @@ The following table describes some common problems and troubleshooting suggestio
 
 ## Related content
 
-- Module 06 — Extend your tool functionality with patterns (chaining, fallback, caching).
-- Module 10 — Connect your agents using A2A protocol (client integration and delegated tokens).
+- [Module 06 - Extend tool functionality with patterns](06-extend-tools-with-patterns.md)
+- [Module 10 - Connect your agents using A2A protocol](10-connect-agents-a2a-protocol.md)
